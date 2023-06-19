@@ -21,7 +21,7 @@
 
 #define USAGE "vis <output_name>"
 #define DEFAULT_NAME "a.mp4"
-#define CHUNK 1024 * 2
+#define CHUNK 1024
 
 DEC_VOID(canvas_destroy, clean_canvas)
 DEC_VOID(wav_destroy, clean_wav)
@@ -80,7 +80,8 @@ int main(ARGS) {
     double log_step = d / log10(CHUNK);
 
     i32 fft_out[CHUNK];
-    fft(buffer, fft_out, CHUNK);
+    fft_init(CHUNK);
+    fft(buffer, fft_out);
     normalize_i32(fft_out, CHUNK, HEIGHT / 3);
 
     for (usize i = 0; i < CHUNK - 1; i ++) {

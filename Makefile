@@ -1,4 +1,4 @@
-C_FILES := $(wildcard src/*.c)
+C_FILES := $(wildcard src/*.c) $(wildcard kiss_fft/*.c)
 H_FILES := $(wildcard src/*.h) $(wildcard src/include/*.h)
 TARGET := vis
 CC := gcc
