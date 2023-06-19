@@ -19,28 +19,42 @@
 #define USAGE "vis <output_name>"
 #define DEFAULT_NAME "a.mp4"
 
-int main(ARGS) {
-    char *output_file = DEFAULT_NAME;
+DEC_VOID(canvas_destroy, clean_canvas)
+DEC_VOID(wav_destroy, clean_wav)
+DEC_VOID_DEREF(close, clean_fd, int)
 
-    BEGIN_PARSE_ARGS("")
+void check_input_name(const char *name) {
+    usize len = strlen(name);
+    ERR_ASSERT(len > 4, "Invalid input name"); 
+    ERR_ASSERT(strcmp(&name[len-4], ".wav") == 0, "Invalid input file type"); 
+}
+
+int main(ARGS) {
+    char *output_file = DEFAULT_NAME, input_file[MAX_FILENAME] = "\0";
+
+    BEGIN_PARSE_ARGS("%s", input_file)
         ARG_STRING(output_file, "-o")
     END_PARSE_ARGS
 
+    check_input_name(input_file);
+    wav_t *wav = wav_from_file(input_file);
+    clean_register(&wav, clean_wav);
+
     color_t pixels[WIDTH*HEIGHT];
     canvas_t *canvas = canvas_from_buffer(pixels, WIDTH, HEIGHT);
+    clean_register(&canvas, clean_canvas);
 
     int outfd = open_ffmpeg(output_file, WIDTH, HEIGHT, FPS);
+    clean_register(&outfd, clean_fd);
      
-    canvas_fill(canvas, COLOR_BLUE);
-    canvas_draw_circle(canvas, (point_t){.x = WIDTH/2, .y = HEIGHT/2}, HEIGHT/3, COLOR_RED);
-
     for (usize i = 0; i < FPS * DURATION; i++) {
+        canvas_fill(canvas, COLOR_BLUE);
+        canvas_draw_circle(canvas, (point_t){.x = WIDTH/2, .y = i}, HEIGHT/6, COLOR_RED);
+
         canvas_dump(canvas, outfd);
     }
-
     close(outfd);
-    canvas_destroy(&canvas);
     wait(NULL);
     printf("Operation completed\n");
-    return 0;
+    clean_exit(0);
 }

@@ -40,7 +40,7 @@ wav_t *wav_from_file(const char* filename) {
     return wav;
 }
 
-void destroy_wav(wav_t **wav) {
+void wav_destroy(wav_t **wav) {
     free((*wav)->buffer);
     free(*wav);
     *wav = NULL;

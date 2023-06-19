@@ -47,14 +47,11 @@ void canvas_draw_point(canvas_t *canvas, point_t point, color_t color) {
 }
 
 void canvas_draw_circle(canvas_t *canvas, point_t center, u32 radius, color_t color) {
-    ERR_ASSERT(center.x - radius >= 0 && center.x + radius < canvas->width && center.y - radius >= 0 && center.y + radius < canvas->height, "Invalid circle");
     for (u32 x = center.x - radius; x < center.x + radius; x++){
         for (u32 y = center.y - radius; y < center.y + radius; y++){
             point_t p = (point_t) {.x = x, .y = y};
-            
-            if (point_dist_sqrd(p, center) <= radius*radius) {
+            if (p.x >= 0 && p.x < canvas->width && p.y >= 0 && p.y < canvas->height && point_dist_sqrd(p, center) <= radius*radius) 
                 canvas_draw_point(canvas, p, color);
-            }
         }
     }
 }
