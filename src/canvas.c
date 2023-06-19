@@ -46,6 +46,22 @@ void canvas_draw_point(canvas_t *canvas, point_t point, color_t color) {
     canvas->buffer[point.x + point.y*canvas->width] = color;
 }
 
+void canvas_draw_line(canvas_t *canvas, point_t p1, point_t p2, u32 thickness, color_t color) {
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
+    int steps = abs(dx) > abs(dy) ? abs(dx) : abs(dy);
+    float xIncrement = (float)dx / (float)steps;
+    float yIncrement = (float)dy / (float)steps;
+    float x = p1.x;
+    float y = p1.y;
+
+    for (int i = 0; i <= steps; i++) {
+        canvas_draw_circle(canvas, (point_t){.x = x, .y = y}, thickness, color);
+        x += xIncrement;
+        y += yIncrement;
+    }
+}
+
 void canvas_draw_circle(canvas_t *canvas, point_t center, u32 radius, color_t color) {
     for (u32 x = center.x - radius; x < center.x + radius; x++){
         for (u32 y = center.y - radius; y < center.y + radius; y++){

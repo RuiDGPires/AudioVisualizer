@@ -33,5 +33,6 @@ void canvas_fill(canvas_t *, color_t);
 void canvas_dump(canvas_t *, int); 
 void canvas_draw_point(canvas_t *, point_t, color_t); 
 void canvas_draw_circle(canvas_t *, point_t, u32, color_t);
+void canvas_draw_line(canvas_t *, point_t, point_t, u32, color_t);
 
 #endif

@@ -104,8 +104,7 @@ void wav_to_mono(wav_t *wav) {
 }
 
 i32 *wav_to_32(wav_t *wav) {
-    u8 bytes_per_sample = wav->header.bitsPerSample / 8;
-    usize n_samples = wav->data.size / bytes_per_sample;
+    usize n_samples = wav_n_samples(wav);
     u32 new_size = sizeof(i32) * n_samples;
     wav->data.buffer = realloc(wav->data.buffer, new_size);
 
@@ -120,4 +119,41 @@ i32 *wav_to_32(wav_t *wav) {
     wav->header.bitsPerSample = 32; 
 
     return (i32 *) wav->data.buffer;
+}
+
+i32 sign(i32 v) {
+    return v >= 0 ? 1 : -1;
+}
+
+i32 abs(i32 v) {
+    return v >= 0 ? v : -1 * v;
+}
+
+i32 map(i32 val, i32 f_min, i32 f_max, i32 t_min, i32 t_max) {
+    // May devide by zero!
+    return t_min + (val - f_min) * ((double)(t_max - t_min) / (f_max - f_min));
+}
+
+void wav_normalize(wav_t *wav, usize new_max) {
+    usize n_samples = wav_n_samples(wav);
+
+    i32 max = 0;
+
+    for (usize i = 0; i < n_samples; i++) {
+        i32 val = wav_get_val32(wav, i);
+        if (abs(val) > max) 
+            max = val;
+    }
+
+    for (usize i = 0; i < n_samples; i++) {
+        i32 val = wav_get_val32(wav, i);
+        i32 s = sign(val);
+        //wav_set_val(wav, i, s * map(abs(val), 0, max, 0, new_max));
+        wav_set_val(wav, i, s * map(abs(val), 0, max, 0, new_max));
+    }
+}
+
+usize wav_n_samples(wav_t *wav) {
+    u8 bytes_per_sample = wav->header.bitsPerSample / 8;
+    return wav->data.size / bytes_per_sample;
 }

@@ -10,8 +10,8 @@
 #include "canvas.h"
 #include "fft.h"
 
-#define WIDTH  600 
-#define HEIGHT 400
+#define WIDTH  1200
+#define HEIGHT 800
 #define FPS 30
 #define DURATION 5
 
@@ -42,6 +42,8 @@ int main(ARGS) {
     clean_register(&wav, clean_wav);
 
     wav_to_mono(wav);
+    i32 *buffer = wav_to_32(wav);
+    wav_normalize(wav, HEIGHT/3);
 
     color_t pixels[WIDTH*HEIGHT];
     canvas_t *canvas = canvas_from_buffer(pixels, WIDTH, HEIGHT);
@@ -50,12 +52,22 @@ int main(ARGS) {
     int outfd = open_ffmpeg(output_file, WIDTH, HEIGHT, FPS);
     clean_register(&outfd, clean_fd);
      
-    for (usize i = 0; i < FPS * DURATION; i++) {
-        canvas_fill(canvas, COLOR_BLUE);
-        canvas_draw_circle(canvas, (point_t){.x = WIDTH/2, .y = i}, HEIGHT/6, COLOR_RED);
+    canvas_fill(canvas, COLOR_BLUE);
 
+    usize start = WIDTH / 10, end = WIDTH * 9/10;
+    double step = (double) (end - start) / wav_n_samples(wav);
+
+    for (usize i = 0; i < wav_n_samples(wav); i ++) {
+        point_t p1 = {.x = start + i * step,       .y = HEIGHT/2 + buffer[i]};
+        point_t p2 = {.x = start + (i + 1) * step,  .y = HEIGHT/2 + buffer[i+1]};
+        canvas_draw_line(canvas, p1, p2, 1, COLOR_RED);
+    }
+
+
+    for (usize i = 0; i < FPS * DURATION; i++) {
         canvas_dump(canvas, outfd);
     }
+
     close(outfd);
     wait(NULL);
     printf("Operation completed\n");
