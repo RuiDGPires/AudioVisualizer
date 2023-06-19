@@ -15,12 +15,15 @@ wav_t *wav_from_file(const char* filename) {
 
     // Read the WAV file header
     file_read(&header, sizeof(wav_header_t), file);
+    wav->header = header;
 
     // Check if the file format is valid
     ERR_ASSERT_CLN(header.chunkID[0] == 'R' && header.chunkID[1] == 'I' && header.chunkID[2] == 'F' && header.chunkID[3] == 'F' && header.format[0] == 'W' && header.format[1] == 'A' && header.format[2] == 'V' && header.format[3] == 'E', 
             fclose(file), "Invalid WAV file format");
 
+    fseek(file, header.subchunk1Size + 20, SEEK_SET);
     file_read(&(wav->data), sizeof(wav->data) - sizeof(u8 *), file);
+
     while(!(wav->data.ID[0] == 'd' && wav->data.ID[1] == 'a' && wav->data.ID[2] == 't'&& wav->data.ID[3] == 'a')) {
         fseek(file, wav->data.size, SEEK_CUR);
         file_read(&(wav->data), sizeof(wav->data) - sizeof(u8 *), file);
@@ -29,7 +32,6 @@ wav_t *wav_from_file(const char* filename) {
     // Allocate memory to store audio data
     u32 dataSize = wav->data.size;
 
-    wav->header = header;
     u8* buffer = (uint8_t*)malloc(sizeof(u8) * dataSize);
 
     ERR_ASSERT_CLN(buffer != NULL, fclose(file), "Failed to allocate memory");
@@ -116,6 +118,7 @@ i32 *wav_to_32(wav_t *wav) {
 
     wav->data.size = new_size;
     wav->header.bitsPerSample = 32; 
+    wav->header.blockAlign = 8;
 
     return (i32 *) wav->data.buffer;
 }
@@ -134,7 +137,6 @@ void wav_normalize(wav_t *wav, usize new_max) {
     for (usize i = 0; i < n_samples; i++) {
         i32 val = wav_get_val32(wav, i);
         i32 s = sign(val);
-        //wav_set_val(wav, i, s * map(abs(val), 0, max, 0, new_max));
         wav_set_val(wav, i, s * map(abs(val), 0, max, 0, new_max));
     }
 }

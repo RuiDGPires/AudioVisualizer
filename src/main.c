@@ -74,19 +74,19 @@ int main(ARGS) {
     canvas_fill(canvas, COLOR_BLACK);
 
     usize start = WIDTH / 10, end = WIDTH * 9/10;
-    double step = (double) (end - start) / wav_n_samples(wav);
+    double step = (double) (end - start) / CHUNK;
 
     usize d = (end - start);
     double log_step = d / log10(CHUNK);
 
     i32 fft_out[CHUNK];
     fft(buffer, fft_out, CHUNK);
-
     normalize_i32(fft_out, CHUNK, HEIGHT / 3);
 
     for (usize i = 0; i < CHUNK - 1; i ++) {
         double x1 = start + log10(i + 1) * log_step;
         double x2 = start + log10(i + 2) * log_step;
+        
 
         point_t p1 = {.x = x1, .y = HEIGHT/2 + fft_out[i]};
         point_t p2 = {.x = x2, .y = HEIGHT/2 + fft_out[i+1]};
