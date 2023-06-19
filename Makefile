@@ -4,7 +4,7 @@ TARGET := vis
 CC := gcc
 
 $(TARGET): $(C_FILES) $(H_FILES)
-	gcc $(C_FILES) -o $@
+	gcc -Wall $(C_FILES) -o $@ -lm
 
 .PHONY: clean
 clean:

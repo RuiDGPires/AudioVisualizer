@@ -32,7 +32,11 @@ typedef struct {
 wav_t *wav_from_file(const char *);
 void wav_destroy(wav_t **);
 
+void wav_set_val(wav_t *, usize, u32);
 i32 wav_get_val32(wav_t *, usize);
+i32 wav_get_val32_channel(wav_t *, usize, u8 channel);
 i64 wav_get_val64(wav_t *, usize);
+void wav_to_mono(wav_t *);
+i32 *wav_to_32(wav_t *);
 
 #endif

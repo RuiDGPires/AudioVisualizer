@@ -73,3 +73,51 @@ i32 wav_get_val32(wav_t *wav, usize n) {
 
     return ret;
 }
+
+
+i32 wav_get_val32_channel(wav_t *wav, usize n, u8 channel) {
+    return wav_get_val32(wav, n*(wav->header.numChannels) + channel);
+}
+
+void wav_set_val(wav_t *wav, usize n, u32 val) {
+    u8 bytes_per_sample = wav->header.bitsPerSample / 8;
+    for (u8 i = 0; i < bytes_per_sample; i++) {
+        u32 mask = 0xFF << i * 8;
+        wav->data.buffer[n*bytes_per_sample + i] = (val & mask) >> i * 8;
+    }
+}
+
+void wav_to_mono(wav_t *wav) {
+    // (left + right) / 2
+    u8 bytes_per_sample = wav->header.bitsPerSample / 8;
+    for (usize i = 0; i < wav->data.size / (wav->header.numChannels * bytes_per_sample); i++)  {
+        i32 sum = 0;
+        for (u8 j = 0; j < wav->header.numChannels; j++) {
+            sum += wav_get_val32(wav, i * wav->header.numChannels + j);
+        }
+        wav_set_val(wav, i, sum / wav->header.numChannels);
+    }
+
+    wav->data.size = wav->data.size / wav->header.numChannels;
+    wav->header.numChannels = 1;
+    wav->data.buffer = realloc(wav->data.buffer, sizeof(u8) * wav->data.size);
+}
+
+i32 *wav_to_32(wav_t *wav) {
+    u8 bytes_per_sample = wav->header.bitsPerSample / 8;
+    usize n_samples = wav->data.size / bytes_per_sample;
+    u32 new_size = sizeof(i32) * n_samples;
+    wav->data.buffer = realloc(wav->data.buffer, new_size);
+
+    
+    for (usize i = 0; i < n_samples; i++) {
+        i32 val = wav_get_val32(wav, n_samples - i - 1);
+        i32 *tmp = (i32 *) wav->data.buffer;
+        tmp[n_samples - i - 1] = val;
+    }
+
+    wav->data.size = new_size;
+    wav->header.bitsPerSample = 32; 
+
+    return (i32 *) wav->data.buffer;
+}

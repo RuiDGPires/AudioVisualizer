@@ -8,6 +8,7 @@
 #include "err.h"
 #include "wav.h"
 #include "canvas.h"
+#include "fft.h"
 
 #define WIDTH  600 
 #define HEIGHT 400
@@ -40,9 +41,7 @@ int main(ARGS) {
     wav_t *wav = wav_from_file(input_file);
     clean_register(&wav, clean_wav);
 
-    for (usize i = 100; i < 1000; i++) {
-        printf("%d\n", wav_get_val32(wav, i)); 
-    }
+    wav_to_mono(wav);
 
     color_t pixels[WIDTH*HEIGHT];
     canvas_t *canvas = canvas_from_buffer(pixels, WIDTH, HEIGHT);
