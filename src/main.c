@@ -91,7 +91,7 @@ int main(ARGS) {
         i32 *fft_prev = &(fft_tmp[(i + 1) % 2])[OFFSET]; // Previous FFT (for smoothing)
 
         normalize_fft(fft_out, fft_prev, CHUNK/2, HEIGHT / 2.2);
-        lowpass(fft_out, CHUNK/2, 0.04, 0);
+        //lowpass(fft_out, CHUNK/2, 0.04, 0);
         for (usize i = 0; i < CHUNK/2 - 1 - OFFSET; i ++) {
             double x1 = start + log10(i + 1) * log_step;
             double x2 = start + log10(i + 2) * log_step;
