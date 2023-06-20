@@ -40,5 +40,6 @@ void wav_to_mono(wav_t *);
 i32 *wav_to_32(wav_t *);
 void wav_normalize(wav_t *, usize);
 usize wav_n_samples(wav_t *);
+double wav_duration(wav_t *);
 
 #endif

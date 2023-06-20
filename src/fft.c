@@ -22,7 +22,7 @@ void clean_fft(void *) {
 void fft_init(usize size) {
   fft_buff1 = malloc(sizeof(kiss_fft_cpx) * size);
   fft_buff2 = malloc(sizeof(kiss_fft_cpx) * size);
-  cfg = kiss_fft_alloc(size, 0, NULL, NULL);
+  cfg = kiss_fft_alloc(size, 1, NULL, NULL);
 
 
   clean_register(NULL, clean_fft);

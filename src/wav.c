@@ -145,3 +145,7 @@ usize wav_n_samples(wav_t *wav) {
     u8 bytes_per_sample = wav->header.bitsPerSample / 8;
     return wav->data.size / bytes_per_sample;
 }
+
+double wav_duration(wav_t *wav) {
+    return (double) wav_n_samples(wav) / wav->header.sampleRate;
+}

@@ -11,17 +11,20 @@
 #include "canvas.h"
 #include "fft.h"
 #include "util.h"
+#include "pcolors.h"
 
 #define WIDTH  1200
 #define HEIGHT 800
 #define FPS 30
-#define DURATION 5
 
 #define MAX_FILENAME 100
 
 #define USAGE "vis <output_name>"
-#define DEFAULT_NAME "a.mp4"
-#define CHUNK 1024
+#define DEFAULT_NAME "out.mp4"
+#define CHUNK (2048 * 2)
+#define OFFSET 220
+#define SMOOTHING 0.3
+#define NORMALIZE_PARAMETER 0.05
 
 DEC_VOID(canvas_destroy, clean_canvas)
 DEC_VOID(wav_destroy, clean_wav)
@@ -33,19 +36,10 @@ void check_input_name(const char *name) {
     ERR_ASSERT(strcmp(&name[len-4], ".wav") == 0, "Invalid input file type"); 
 }
 
-void normalize_i32(i32 *buffer, usize len, usize new_max) {
-    i32 max = 0;
-
+void normalize_fft(i32 *buffer, i32 *tmp, usize len, usize new_max) {
     for (usize i = 0; i < len; i++) {
-        i32 val = buffer[i];
-        if (abs(val) > max) 
-            max = val;
-    }
-
-    for (usize i = 0; i < len; i++) {
-        i32 val = buffer[i];
-        i32 s = sign(val);
-        buffer[i] = s * map(abs(val), 0, max, 0, new_max);
+        buffer[i] = new_max * NORMALIZE_PARAMETER *  buffer[i] / (double) CHUNK;
+        buffer[i] = tmp[i] + (buffer[i] - tmp[i]) * SMOOTHING;
     }
 }
 
@@ -68,39 +62,67 @@ int main(ARGS) {
     canvas_t *canvas = canvas_from_buffer(pixels, WIDTH, HEIGHT);
     clean_register(&canvas, clean_canvas);
 
-    int outfd = open_ffmpeg(output_file, WIDTH, HEIGHT, FPS);
+    int outfd = open_ffmpeg(output_file, input_file, WIDTH, HEIGHT, FPS);
     clean_register(&outfd, clean_fd);
      
-    canvas_fill(canvas, COLOR_BLACK);
 
     usize start = WIDTH / 10, end = WIDTH * 9/10;
-    double step = (double) (end - start) / CHUNK;
+    double step = (double) (end - start) / (CHUNK * 0.5);
 
     usize d = (end - start);
-    double log_step = d / log10(CHUNK);
+    usize N = wav_n_samples(wav);
+    double log_step = d / log10(CHUNK/2.0);
 
-    i32 fft_out[CHUNK];
+    i32 fft_tmp1[CHUNK], fft_tmp2[CHUNK];
     fft_init(CHUNK);
-    fft(buffer, fft_out);
-    normalize_i32(fft_out, CHUNK, HEIGHT / 3);
+    fft(buffer, fft_tmp2); // Fill second tmp buffer with initial fft
+    normalize_fft(fft_tmp2, fft_tmp2, CHUNK, HEIGHT/ 2.2);
 
-    for (usize i = 0; i < CHUNK - 1; i ++) {
-        double x1 = start + log10(i + 1) * log_step;
-        double x2 = start + log10(i + 2) * log_step;
-        
+    double duration = wav_duration(wav);
+    
+    i32 *fft_tmp[2] = {fft_tmp1, fft_tmp2};
 
-        point_t p1 = {.x = x1, .y = HEIGHT/2 + fft_out[i]};
-        point_t p2 = {.x = x2, .y = HEIGHT/2 + fft_out[i+1]};
+    for (usize i = 0; i < FPS * duration; i++) {
+        canvas_fill(canvas, COLOR_BLACK);
+        fft(&buffer[map(i, 0, FPS * duration, CHUNK*2, N - CHUNK)], fft_tmp[i % 2]);
 
-        canvas_draw_line(canvas, p1, p2, 1, COLOR_WHITE);
-    }
+        // Alteranting pointers
+        i32 *fft_out = &(fft_tmp[i % 2])[OFFSET]; // Output FFT
+        i32 *fft_prev = &(fft_tmp[(i + 1) % 2])[OFFSET]; // Previous FFT (for smoothing)
 
-    for (usize i = 0; i < FPS * DURATION; i++) {
+        normalize_fft(fft_out, fft_prev, CHUNK/2, HEIGHT / 2.2);
+        for (usize i = 0; i < CHUNK/2 - 1 - OFFSET; i ++) {
+            double x1 = start + log10(i + 1) * log_step;
+            double x2 = start + log10(i + 2) * log_step;
+            
+            //double x1 = start + i * step;
+            //double x2 = start + (i+1) * step;
+
+            point_t p1 = {.x = x1, .y = HEIGHT*3/4 - fft_out[i]};
+            point_t p2 = {.x = x2, .y = HEIGHT*3/4 - fft_out[i+1]};
+
+            canvas_draw_line(canvas, p1, p2, 1, COLOR_WHITE);
+        }
         canvas_dump(canvas, outfd);
     }
 
     close(outfd);
-    wait(NULL);
-    printf("Operation completed\n");
+    int status;
+
+    wait(&status);
+
+    printf("\n\n");
+    if (WIFEXITED(status)) {
+        printf("************************\n");
+        printf("%sOperation successful%s\n", PGREEN, PNC);
+        printf("************************\n");
+        printf("Used audio: \n\t'%s'\n", input_file);
+        printf("Generated file:\n\t'%s'\n", output_file);
+    } else {
+        printf("************************\n");
+        printf("%sOperation failed%s\n", PRED, PNC);
+        printf("************************\n");
+    }
+    
     clean_exit(0);
 }

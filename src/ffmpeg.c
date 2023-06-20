@@ -9,7 +9,7 @@
 #define MAX_CHARS_DIM 100
 #define MAX_CHARS_FPS 4
 
-int open_ffmpeg(const char *filename, u32 width, u32 height, u32 fps) {
+int open_ffmpeg(const char *filename, const char *audio, u32 width, u32 height, u32 fps) {
     int pipefd[2];
     ERR_ASSERT(pipe(pipefd) >= 0, "Unable to open pipe");
     
@@ -39,6 +39,7 @@ int open_ffmpeg(const char *filename, u32 width, u32 height, u32 fps) {
             "-c:v", "libx264",
 
             filename,
+            "-i", audio,
             // ...
             NULL
         ) >= 0, "Unable to open FFMPEG: %s", strerror(errno));
