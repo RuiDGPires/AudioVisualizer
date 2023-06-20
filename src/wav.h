@@ -37,6 +37,7 @@ i32 wav_get_val32(wav_t *, usize);
 i32 wav_get_val32_channel(wav_t *, usize, u8 channel);
 i64 wav_get_val64(wav_t *, usize);
 void wav_to_mono(wav_t *);
+void wav_to_mono_left(wav_t *);
 i32 *wav_to_32(wav_t *);
 void wav_normalize(wav_t *, usize);
 usize wav_n_samples(wav_t *);

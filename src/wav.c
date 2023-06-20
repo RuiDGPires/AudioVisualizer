@@ -88,6 +88,17 @@ void wav_set_val(wav_t *wav, usize n, u32 val) {
     }
 }
 
+void wav_to_mono_left(wav_t *wav) {
+    u8 bytes_per_sample = wav->header.bitsPerSample / 8;
+    for (usize i = 0; i < wav->data.size / (wav->header.numChannels * bytes_per_sample); i++)  {
+        wav_set_val(wav, i, wav_get_val32_channel(wav, i, 0));
+    }
+
+    wav->data.size = wav->data.size / wav->header.numChannels;
+    wav->header.numChannels = 1;
+    wav->data.buffer = realloc(wav->data.buffer, sizeof(u8) * wav->data.size);
+}
+
 void wav_to_mono(wav_t *wav) {
     // (left + right) / 2
     u8 bytes_per_sample = wav->header.bitsPerSample / 8;

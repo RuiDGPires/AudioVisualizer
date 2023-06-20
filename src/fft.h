@@ -3,6 +3,8 @@
 #include "defs.h"
 
 void fft_init(usize);
-void fft(int32_t *buffer, int32_t *output);
+void fft(i32 *buffer, i32 *output);
+
+void lowpass(i32 *, usize, double, usize);
 
 #endif
