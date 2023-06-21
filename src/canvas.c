@@ -12,6 +12,24 @@ point_t point_sum(point_t p1, point_t p2) {
     return (point_t) {.x = p1.x + p2.x, .y = p1.y + p2.y};
 }
 
+canvas_t *canvas_dup(canvas_t *canvas) {
+    canvas_t *new_canvas = canvas_create(canvas->width, canvas->height); 
+
+    for (usize j = 0; j < canvas->height; j++) {
+        for (usize i = 0; i < canvas->width; i++) {
+            point_t p = MAKEPOINT(i, j);
+            canvas_draw_point(new_canvas, p, canvas_get_point(canvas, p));
+        }
+    }
+
+    return new_canvas;
+}
+
+// Copies the contents of a canvas to another (equivalent to canvas_paste(dest, src, (0, 0)))
+inline void canvas_cpy(canvas_t *dst, canvas_t *src) {
+    canvas_paste(dst, src, MAKEPOINT(0,0));
+}
+
 canvas_t *canvas_create(u32 width, u32 height) {
     u32 *buffer = (u32*) malloc(sizeof(u32) * width * height); 
     canvas_t *canvas = canvas_from_buffer(buffer, width, height);
@@ -106,5 +124,3 @@ void canvas_paste(canvas_t *dest, canvas_t *src, point_t p) {
         }
     }
 }
-
-

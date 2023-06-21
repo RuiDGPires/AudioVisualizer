@@ -28,6 +28,8 @@ u32 point_dist_sqrd(point_t, point_t);
 point_t point_sum(point_t, point_t);
 
 canvas_t *canvas_create(u32, u32);
+canvas_t *canvas_dup(canvas_t *); // Allocates a new canvas
+void canvas_cpy(canvas_t *, canvas_t *); // Copies the contents of a canvas to another (equivalent to canvas_paste(dest, src, (0, 0)))
 canvas_t *canvas_from_buffer(u32 *, u32, u32);
 void canvas_destroy(canvas_t **);
 
@@ -40,7 +42,8 @@ void canvas_draw_circle_outline(canvas_t *, point_t, u32, u32, color_t);
 void canvas_draw_line(canvas_t *, point_t, point_t, u32, color_t);
 void canvas_paste(canvas_t *, canvas_t *, point_t);
 
-canvas_t *canvas_from_png(const char *);
-canvas_t *canvas_from_jpeg(const char *);
+//canvas_t *canvas_from_png(const char *);
+//canvas_t *canvas_from_jpeg(const char *);
+canvas_t *canvas_from_img(const char *);
 
 #endif

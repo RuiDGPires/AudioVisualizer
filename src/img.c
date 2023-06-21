@@ -166,3 +166,21 @@ canvas_t *canvas_from_jpeg(const char *filename) {
     fclose(fp);
     return canvas;
 }
+
+canvas_t *canvas_from_img(const char *filename) {
+    usize len = strlen(filename);
+    ERR_ASSERT(len > 4, "Invalid image name"); 
+    char *ext1 = &filename[len-4];
+    char *ext2 = "\0";
+
+    if (len > 5)
+        ext2 = &filename[len-5];
+    
+    if (strcmp(ext1, ".png") == 0)
+        return canvas_from_png(filename);
+    else if (strcmp(ext1, ".jpg") == 0 || strcmp(ext2, ".jpeg") == 0) 
+        return canvas_from_jpeg(filename);
+
+    ERR("Invalid image file");
+    exit(0); // Unreachable
+}
