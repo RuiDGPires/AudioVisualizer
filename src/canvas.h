@@ -36,6 +36,7 @@ void canvas_dump(canvas_t *, int);
 color_t canvas_get_point(canvas_t *, point_t); 
 void canvas_draw_point(canvas_t *, point_t, color_t); 
 void canvas_draw_circle(canvas_t *, point_t, u32, color_t);
+void canvas_draw_circle_outline(canvas_t *, point_t, u32, u32, color_t);
 void canvas_draw_line(canvas_t *, point_t, point_t, u32, color_t);
 void canvas_paste(canvas_t *, canvas_t *, point_t);
 

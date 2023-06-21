@@ -81,6 +81,19 @@ void canvas_draw_circle(canvas_t *canvas, point_t center, u32 radius, color_t co
     }
 }
 
+void canvas_draw_circle_outline(canvas_t *canvas, point_t center, u32 radius, u32 border_size, color_t color) {
+    u32 dist_min = radius - border_size;
+    dist_min *= dist_min;
+    for (u32 x = center.x - radius; x < center.x + radius; x++){
+        for (u32 y = center.y - radius; y < center.y + radius; y++){
+            point_t p = (point_t) {.x = x, .y = y};
+            u32 dist = point_dist_sqrd(p, center);
+            if (p.x >= 0 && p.x < canvas->width && p.y >= 0 && p.y < canvas->height && dist <= radius*radius && dist >= dist_min) 
+                canvas_draw_point(canvas, p, color);
+        }
+    }
+}
+
 /*
  * Pastes the src canvas on top of the dest canvas
  * p is the coordinate on dest of the top right corner of for the src canvas
