@@ -13,6 +13,8 @@
 #include "util.h"
 #include "pcolors.h"
 
+//#define FREQ_GRAPH
+
 #define WIDTH  1200
 #define HEIGHT 800
 #define FPS 30
@@ -22,7 +24,7 @@
 #define USAGE "vis <output_name>"
 #define DEFAULT_NAME "out.mp4"
 #define CHUNK (2048 * 2)
-#define OFFSET 300
+#define OFFSET 250
 #define SMOOTHING 0.3
 #define NORMALIZE_PARAMETER 0.8
 
@@ -48,7 +50,6 @@ void normalize_fft(i32 *buffer, i32 *tmp, usize len, usize new_max) {
 wav_t *open_wav(const char *filename) {
     check_input_name(filename);
     wav_t *wav = wav_from_file(filename);
-    clean_register(&wav, clean_wav);
     return wav;
 }
 
@@ -83,6 +84,8 @@ int main(ARGS) {
     END_PARSE_ARGS
 
     wav_t *wav = open_wav(input_file);
+    clean_register(&wav, clean_wav);
+
     i32 *buffer = process_wav(wav);
     double duration = wav_duration(wav);
 
@@ -104,8 +107,11 @@ int main(ARGS) {
 
     fft(buffer, fft_tmp2); // Fill second tmp buffer with initial fft
     normalize_fft(fft_tmp2, fft_tmp2, CHUNK, HEIGHT/ 2.2);
+    fft_lowpass(fft_tmp2, CHUNK/2, 0.04, 0);
     i32 *fft_tmp[2] = {fft_tmp1, fft_tmp2};
     // *** 
+
+    i32 prev_energy = map(fft_energy(fft_tmp2, CHUNK/2), 0, 100, 0, HEIGHT/100);
 
     for (usize i = 0; i < FPS * duration; i++) {
         canvas_fill(canvas, COLOR_BLACK);
@@ -116,10 +122,11 @@ int main(ARGS) {
         i32 *fft_prev = &(fft_tmp[(i + 1) % 2])[OFFSET]; // Previous FFT (for smoothing)
 
         // *** Process FFT
-        normalize_fft(fft_out, fft_prev, CHUNK/2, HEIGHT / 2.2);
-        lowpass(fft_out, CHUNK/2, 0.04, 0);
+        normalize_fft(fft_out, fft_prev, CHUNK/2 - OFFSET, HEIGHT / 2.2);
+        fft_lowpass(fft_out, CHUNK/2 - OFFSET, 0.04, 0);
         // *** 
 
+#ifdef FREQ_GRAPH
         // *** Draw Frequency graph
         for (usize i = 0; i < CHUNK/2 - 1 - OFFSET; i ++) {
             double x1 = start + log10(i + 1) * log_step;
@@ -132,6 +139,15 @@ int main(ARGS) {
         }
         canvas_dump(canvas, outfd);
         // *** 
+#else
+        i32 energy = map(fft_energy(fft_out, CHUNK/2 - OFFSET), 0, 100, 0, HEIGHT/10);
+
+        energy = prev_energy + (energy - prev_energy)* 0.4;
+        prev_energy = energy;
+        canvas_draw_circle_outline(canvas, MAKEPOINT(WIDTH/2, HEIGHT/2), HEIGHT/3 + energy, 4, COLOR_WHITE);
+        canvas_dump(canvas, outfd);
+#endif
+
     }
 
     close(outfd);

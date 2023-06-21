@@ -45,6 +45,8 @@ wav_t *wav_from_file(const char* filename) {
 }
 
 void wav_destroy(wav_t **wav) {
+    if (*wav == NULL) return;
+
     free((*wav)->data.buffer);
     free(*wav);
     *wav = NULL;
