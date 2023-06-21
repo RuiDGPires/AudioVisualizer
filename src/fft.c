@@ -50,23 +50,3 @@ void lowpass(i32 *buffer, usize len, double db, usize freq) {
     buffer[i] = a > 1.0 ? 0  : buffer[i] * (1 - a) * (1 - a);
   }
 }
-
-//void lowpass(i32 *buffer, usize len, double db, usize cutoff) {
-//      double rc = 1.0 / (2.0 * M_PI * cutoff);  // Calculate RC constant
-//
-//    double dt = 1.0 / cutoff;  // Calculate time step
-//
-//    double filter_constant = dt / (dt + rc);  // Calculate filter constant
-//
-//    double prev_value = buffer[0];
-//
-//    for (size_t i = 1; i < len; i++) {
-//        double current_value = buffer[i];
-//
-//        double filtered_value = (filter_constant * current_value) + ((1 - filter_constant) * prev_value);
-//
-//        buffer[i] = (int32_t)filtered_value;
-//
-//        prev_value = filtered_value;
-//    }
-//}
