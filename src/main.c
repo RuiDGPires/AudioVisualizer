@@ -67,7 +67,7 @@ int main(ARGS) {
      
 
     usize start = WIDTH / 10, end = WIDTH * 9/10;
-    double step = (double) (end - start) / (CHUNK * 0.5);
+    //double step = (double) (end - start) / (CHUNK * 0.5);
 
     usize d = (end - start);
     usize N = wav_n_samples(wav);

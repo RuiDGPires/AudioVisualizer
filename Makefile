@@ -4,7 +4,7 @@ TARGET := vis
 CC := gcc
 
 $(TARGET): $(C_FILES) $(H_FILES)
-	gcc -Wall $(C_FILES) -o $@ -lm
+	gcc -Wall $(C_FILES) -o $@ -lm -lpng -ljpeg
 
 .PHONY: clean
 clean:

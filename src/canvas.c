@@ -50,8 +50,9 @@ color_t canvas_get_point(canvas_t *canvas, point_t point) {
     return canvas->buffer[point.x + point.y*canvas->width];
 }
 
-void canvas_draw_point(canvas_t *canvas, point_t point, color_t color) {
-    canvas->buffer[point.x + point.y*canvas->width] = color;
+void canvas_draw_point(canvas_t *canvas, point_t p, color_t color) {
+    ERR_ASSERT(p.x >= 0 && p.x < canvas->width && p.y >= 0 && p.y < canvas->height, "Invalid coordinates");
+    canvas->buffer[p.x + p.y*canvas->width] = color;
 }
 
 void canvas_draw_line(canvas_t *canvas, point_t p1, point_t p2, u32 thickness, color_t color) {
@@ -92,3 +93,5 @@ void canvas_paste(canvas_t *dest, canvas_t *src, point_t p) {
         }
     }
 }
+
+

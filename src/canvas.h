@@ -39,4 +39,7 @@ void canvas_draw_circle(canvas_t *, point_t, u32, color_t);
 void canvas_draw_line(canvas_t *, point_t, point_t, u32, color_t);
 void canvas_paste(canvas_t *, canvas_t *, point_t);
 
+canvas_t *canvas_from_png(const char *);
+canvas_t *canvas_from_jpeg(const char *);
+
 #endif
