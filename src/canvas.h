@@ -12,6 +12,7 @@ typedef u32 color_t;
 #define COLOR_BLUE  RGBA(0x00, 0x00, 0xFF, 0xFF)
 #define COLOR_BLACK RGBA(0x00, 0x00, 0x00, 0xFF)
 #define COLOR_WHITE RGBA(0xFF, 0xFF, 0xFF, 0xFF)
+#define MAKEPOINT(xx,yy) ((point_t){.x = (xx), .y = (yy)})
 
 typedef struct {
     u32 width, height;
@@ -24,6 +25,7 @@ typedef struct {
 } point_t;
 
 u32 point_dist_sqrd(point_t, point_t);
+point_t point_sum(point_t, point_t);
 
 canvas_t *canvas_create(u32, u32);
 canvas_t *canvas_from_buffer(u32 *, u32, u32);
@@ -31,8 +33,10 @@ void canvas_destroy(canvas_t **);
 
 void canvas_fill(canvas_t *, color_t); 
 void canvas_dump(canvas_t *, int); 
+color_t canvas_get_point(canvas_t *, point_t); 
 void canvas_draw_point(canvas_t *, point_t, color_t); 
 void canvas_draw_circle(canvas_t *, point_t, u32, color_t);
 void canvas_draw_line(canvas_t *, point_t, point_t, u32, color_t);
+void canvas_paste(canvas_t *, canvas_t *, point_t);
 
 #endif

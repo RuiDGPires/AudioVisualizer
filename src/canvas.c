@@ -8,6 +8,10 @@ u32 point_dist_sqrd(point_t p1, point_t p2) {
     return dx*dx + dy*dy;
 }
 
+point_t point_sum(point_t p1, point_t p2) {
+    return (point_t) {.x = p1.x + p2.x, .y = p1.y + p2.y};
+}
+
 canvas_t *canvas_create(u32 width, u32 height) {
     u32 *buffer = (u32*) malloc(sizeof(u32) * width * height); 
     canvas_t *canvas = canvas_from_buffer(buffer, width, height);
@@ -42,6 +46,10 @@ void canvas_dump(canvas_t *canvas, int fd) {
     write(fd, canvas->buffer, sizeof(color_t)*canvas->width*canvas->height);
 }
 
+color_t canvas_get_point(canvas_t *canvas, point_t point) {
+    return canvas->buffer[point.x + point.y*canvas->width];
+}
+
 void canvas_draw_point(canvas_t *canvas, point_t point, color_t color) {
     canvas->buffer[point.x + point.y*canvas->width] = color;
 }
@@ -68,6 +76,19 @@ void canvas_draw_circle(canvas_t *canvas, point_t center, u32 radius, color_t co
             point_t p = (point_t) {.x = x, .y = y};
             if (p.x >= 0 && p.x < canvas->width && p.y >= 0 && p.y < canvas->height && point_dist_sqrd(p, center) <= radius*radius) 
                 canvas_draw_point(canvas, p, color);
+        }
+    }
+}
+
+/*
+ * Pastes the src canvas on top of the dest canvas
+ * p is the coordinate on dest of the top right corner of for the src canvas
+ */
+void canvas_paste(canvas_t *dest, canvas_t *src, point_t p) {
+    for (u32 w = 0; w < src->width; w++) {
+        for (u32 h = 0; h < src->height; h++) {
+            point_t p2 = MAKEPOINT(w, h);
+            canvas_draw_point(dest, point_sum(p, p2), canvas_get_point(src, p2));
         }
     }
 }
