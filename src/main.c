@@ -17,7 +17,7 @@
 
 #define WIDTH  1200
 #define HEIGHT 800
-#define FPS 30
+#define FPS 20
 
 #define MAX_FILENAME 100
 
@@ -27,6 +27,7 @@
 #define OFFSET 250
 #define SMOOTHING 0.3
 #define NORMALIZE_PARAMETER 0.8
+#define ENERGY_SCALE 10
 
 DEC_VOID(canvas_destroy, clean_canvas)
 DEC_VOID(wav_destroy, clean_wav)
@@ -94,11 +95,21 @@ int main(ARGS) {
     clean_register(&canvas_back, clean_canvas);
     clean_register(&canvas, clean_canvas);
 
-    if (background_pic_file != NULL) {
+    if (background_pic_file) {
         canvas_back = canvas_from_img(background_pic_file);
     } else {
         canvas_back = canvas_create(WIDTH, HEIGHT);
         canvas_fill(canvas_back, COLOR_BLACK);
+    }
+
+    canvas_t *canvas_center = NULL, *canvas_center_backup = NULL;
+
+    if (center_pic_file) {
+        canvas_center = canvas_from_img(center_pic_file);
+        canvas_center_backup = canvas_dup(canvas_center);
+
+        clean_register(&canvas_center, clean_canvas);
+        clean_register(&canvas_center_backup, clean_canvas);
     }
     
     canvas = canvas_dup(canvas_back);
@@ -125,10 +136,12 @@ int main(ARGS) {
     i32 *fft_tmp[2] = {fft_tmp1, fft_tmp2};
     // *** 
 
-    i32 prev_energy = map(fft_energy(fft_tmp2, CHUNK/2), 0, 100, 0, height/100);
+    i32 prev_energy = map(fft_energy(fft_tmp2, CHUNK/2), 0, 100, 0, height/200);
+    double prev_scale = 1 - (1. / ( 5+ prev_energy));
 
     for (usize i = 0; i < FPS * duration; i++) {
         canvas_cpy(canvas, canvas_back);
+
         fft(&buffer[map(i, 0, FPS * duration, CHUNK*2, N - CHUNK)], fft_tmp[i % 2]);
 
         // Alternating pointers
@@ -154,11 +167,22 @@ int main(ARGS) {
         canvas_dump(canvas, outfd);
         // *** 
 #else
-        i32 energy = map(fft_energy(fft_out, CHUNK/2 - OFFSET), 0, 100, 0, height/10);
+        i32 energy = map(fft_energy(fft_out, CHUNK/2 - OFFSET), 0, 100, 0, height/200);
 
-        energy = prev_energy + (energy - prev_energy)* 0.4;
+        energy = prev_energy + (energy - prev_energy) * 0.4;
         prev_energy = energy;
-        canvas_draw_circle_outline(canvas, MAKEPOINT(width/2, height/2), height/3 + energy, 4, COLOR_WHITE);
+
+        double scale = 1.0 - (1.0 / (5 + energy ));
+        scale = prev_scale + (scale - prev_scale) * 0.6;
+
+        if (canvas_center) {
+            canvas_center->width = canvas_center_backup->width;
+            canvas_center->height = canvas_center_backup->height;
+            canvas_cpy(canvas_center, canvas_center_backup);
+            canvas_scale(canvas_center, scale);
+            canvas_paste(canvas, canvas_center, MAKEPOINT(width/2 - canvas_center->width/2, height/2 - canvas_center->height/2));
+        } else
+            canvas_draw_circle_outline(canvas, MAKEPOINT(width/2, height/2), height/3 + energy, 4, COLOR_WHITE);
         canvas_dump(canvas, outfd);
 #endif
 

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <unistd.h>
+#include <math.h>
 #include "canvas.h"
 #include "err.h"
 
@@ -69,7 +70,7 @@ color_t canvas_get_point(canvas_t *canvas, point_t point) {
 }
 
 void canvas_draw_point(canvas_t *canvas, point_t p, color_t color) {
-    ERR_ASSERT(p.x >= 0 && p.x < canvas->width && p.y >= 0 && p.y < canvas->height, "Invalid coordinates");
+    ERR_ASSERT(p.x >= 0 && p.x < canvas->width && p.y >= 0 && p.y < canvas->height, "Invalid coordinates: (%lu, %lu) on canvas (%u, %u)", p.x, p.y, canvas->width, canvas->height);
     canvas->buffer[p.x + p.y*canvas->width] = color;
 }
 
@@ -123,4 +124,63 @@ void canvas_paste(canvas_t *dest, canvas_t *src, point_t p) {
             canvas_draw_point(dest, point_sum(p, p2), canvas_get_point(src, p2));
         }
     }
+}
+
+color_t bilinear_interpolation(color_t tl, color_t tr, color_t bl, color_t br, double dx, double dy) {
+
+    double w1 = (1 - dx) * (1 - dy);
+    double w2 = dx * (1 - dy);
+    double w3 = (1 - dx) * dy;
+    double w4 = dx * dy;
+
+    u8 result_r = (u8)(GET_RED(tl) * w1 + GET_RED(tr) * w2 + GET_RED(bl) * w3 + GET_RED(br) * w4);
+    u8 result_g = (u8)(GET_GREEN(tl) * w1 + GET_GREEN(tr) * w2 + GET_GREEN(bl) * w3 + GET_GREEN(br) * w4);
+    u8 result_b = (u8)(GET_BLUE(tl) * w1 + GET_BLUE(tr) * w2 + GET_BLUE(bl) * w3 + GET_BLUE(br) * w4);
+    u8 result_a = (u8)(GET_ALPHA(tl) * w1 + GET_ALPHA(tr) * w2 + GET_ALPHA(bl) * w3 + GET_ALPHA(br) * w4);
+
+    return RGBA(result_r, result_g, result_b, result_a);
+}
+
+void canvas_scale(canvas_t *canvas, double s) {
+    //ERR_ASSERT(!canvas->is_static, "Cannot scale a static canvas");
+    ERR_ASSERT(s <= 1, "Cannot upscale");
+
+    u32 dst_w = canvas->width  * s;
+    u32 dst_h = canvas->height * s;
+
+    //color_t *dst = malloc(sizeof(color_t) * dst_w * dst_h);
+    
+    double s2 = 1 / s;
+
+    for (usize y = 0; y < dst_h; y++) {
+        for (usize x = 0; x < dst_w; x++) {
+            double src_x = x * s2;
+            double src_y = y * s2;
+            int x1 = (int)src_x;
+            int y1 = (int)src_y;
+            int x2 = ceil(src_x);
+            int y2 = ceil(src_y);
+
+            if (x1 >= canvas->width || y1 >= canvas->height || x2 >= canvas->width || y2 >= canvas->height)
+                continue;
+
+            double dx = src_x - x1;
+            double dy = src_y - y1;
+
+            color_t tl = canvas_get_point(canvas, MAKEPOINT(x1, y1));
+            color_t tr = canvas_get_point(canvas, MAKEPOINT(x2, y1));
+            color_t bl = canvas_get_point(canvas, MAKEPOINT(x1, y2));
+            color_t br = canvas_get_point(canvas, MAKEPOINT(x2, y2));
+
+            color_t result = bilinear_interpolation(tl, tr, bl, br, dx, dy);
+
+            canvas->buffer[y * dst_w + x] = result;
+        }
+    }
+
+    // Replace buffer
+    //free(canvas->buffer); 
+    //canvas->buffer = dst;
+    canvas->width = dst_w;
+    canvas->height = dst_h;
 }
