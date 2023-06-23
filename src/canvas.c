@@ -35,6 +35,8 @@ canvas_t *canvas_create(u32 width, u32 height) {
     u32 *buffer = (u32*) malloc(sizeof(u32) * width * height); 
     canvas_t *canvas = canvas_from_buffer(buffer, width, height);
     canvas->is_static = FALSE;
+
+    canvas_fill(canvas, RGBA(0, 0, 0, 0));
     return canvas;
 }
 
@@ -55,6 +57,7 @@ void canvas_destroy(canvas_t **canvas) {
     *canvas = NULL;
 }
 
+// Ignores alpha
 void canvas_fill(canvas_t *canvas, color_t color) {
     for (usize i = 0; i < canvas->width * canvas->height; i++) {
         canvas->buffer[i] = color;
@@ -71,6 +74,7 @@ color_t canvas_get_point(canvas_t *canvas, point_t point) {
 
 void canvas_draw_point(canvas_t *canvas, point_t p, color_t color) {
     ERR_ASSERT(p.x >= 0 && p.x < canvas->width && p.y >= 0 && p.y < canvas->height, "Invalid coordinates: (%lu, %lu) on canvas (%u, %u)", p.x, p.y, canvas->width, canvas->height);
+
     canvas->buffer[p.x + p.y*canvas->width] = color;
 }
 
@@ -178,9 +182,6 @@ void canvas_scale(canvas_t *canvas, double s) {
         }
     }
 
-    // Replace buffer
-    //free(canvas->buffer); 
-    //canvas->buffer = dst;
     canvas->width = dst_w;
     canvas->height = dst_h;
 }

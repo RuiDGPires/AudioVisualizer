@@ -51,5 +51,7 @@ void canvas_paste(canvas_t *, canvas_t *, point_t);
 //canvas_t *canvas_from_jpeg(const char *);
 canvas_t *canvas_from_img(const char *);
 void canvas_scale(canvas_t *canvas, double s);
+void canvas_draw_integer(canvas_t *canvas, point_t, i32 n, color_t color);
+void canvas_draw_integer_center(canvas_t *canvas, point_t, i32 n, color_t color);
 
 #endif

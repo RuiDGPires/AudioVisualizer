@@ -44,19 +44,20 @@ void fft(int32_t *buffer, int32_t *output) {
 }
 
 void fft_lowpass(i32 *buffer, usize len, double db, usize freq) {
-  usize d = (len - freq) * db;
+  double d = (len - freq) * db;
+  d = d > 0 ? d : 0.001;
   for (usize i = freq; i < len; i++) {
     double a = (double) (i - freq) / d;
     buffer[i] = a > 1.0 ? 0  : buffer[i] * (1 - a) * (1 - a);
   }
 }
 
-i32 fft_energy(i32 *buffer, usize len) {
+double fft_energy(i32 *buffer, usize len) {
   i64 sum = 0; 
 
   for (usize i = 0; i < len; i++) {
     sum += buffer[i];
   }
 
-  return (i32) (100 * (double)sum / len);
+  return (100 * (double)sum / len);
 }

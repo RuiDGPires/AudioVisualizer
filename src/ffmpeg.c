@@ -3,6 +3,7 @@
 #include "ffmpeg.h"
 #include "err.h"
 
+#define AUDIO
 #define PIPE_READ  0
 #define PIPE_WRITE 1
 
@@ -39,7 +40,9 @@ int open_ffmpeg(const char *filename, const char *audio, u32 width, u32 height, 
             "-c:v", "libx264",
 
             filename,
+#ifdef AUDIO
             "-i", audio,
+#endif
             // ...
             NULL
         ) >= 0, "Unable to open FFMPEG: %s", strerror(errno));

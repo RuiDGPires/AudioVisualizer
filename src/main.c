@@ -14,6 +14,7 @@
 #include "pcolors.h"
 
 //#define FREQ_GRAPH
+//#define DURATION 6 
 
 #define WIDTH  1200
 #define HEIGHT 800
@@ -23,11 +24,16 @@
 
 #define USAGE "vis <output_name>"
 #define DEFAULT_NAME "out.mp4"
-#define CHUNK (2048 * 2)
-#define OFFSET 250
-#define SMOOTHING 0.3
-#define NORMALIZE_PARAMETER 0.8
+#define CHUNK (512 * 2)
+#define OFFSET 3
+#define SMOOTHING 0.4
+#define NORMALIZE_PARAMETER 0.06
 #define ENERGY_SCALE 10
+#define BASE_SCALE 0.7
+
+#ifndef DURATION
+#define DURATION duration
+#endif
 
 DEC_VOID(canvas_destroy, clean_canvas)
 DEC_VOID(wav_destroy, clean_wav)
@@ -131,29 +137,28 @@ int main(ARGS) {
     fft_init(CHUNK);
 
     fft(buffer, fft_tmp2); // Fill second tmp buffer with initial fft
-    normalize_fft(fft_tmp2, fft_tmp2, CHUNK, height/ 2.2);
+    normalize_fft(fft_tmp2, fft_tmp2, CHUNK/2 - OFFSET, height/ 5);
     fft_lowpass(fft_tmp2, CHUNK/2, 0.04, 0);
     i32 *fft_tmp[2] = {fft_tmp1, fft_tmp2};
     // *** 
 
-    i32 prev_energy = map(fft_energy(fft_tmp2, CHUNK/2), 0, 100, 0, height/200);
-    double prev_scale = 1 - (1. / ( 5+ prev_energy));
+    double prev_energy = 0;
 
-    for (usize i = 0; i < FPS * duration; i++) {
-        canvas_cpy(canvas, canvas_back);
+    for (usize i = 0; i < FPS * DURATION; i++) {
 
-        fft(&buffer[map(i, 0, FPS * duration, CHUNK*2, N - CHUNK)], fft_tmp[i % 2]);
+        fft(&buffer[map(i, 0, FPS * duration, CHUNK, N - CHUNK)], fft_tmp[i % 2]);
 
         // Alternating pointers
         i32 *fft_out = &(fft_tmp[i % 2])[OFFSET]; // Output FFT
         i32 *fft_prev = &(fft_tmp[(i + 1) % 2])[OFFSET]; // Previous FFT (for smoothing)
 
-        // *** Process FFT
+        //// *** Process FFT
         normalize_fft(fft_out, fft_prev, CHUNK/2 - OFFSET, height / 2.2);
-        fft_lowpass(fft_out, CHUNK/2 - OFFSET, 0.04, 0);
+        fft_lowpass(fft_out, CHUNK/2 - OFFSET, 0.0005, 2);
         // *** 
 
 #ifdef FREQ_GRAPH
+        canvas_fill(canvas, COLOR_BLACK);
         // *** Draw Frequency graph
         for (usize i = 0; i < CHUNK/2 - 1 - OFFSET; i ++) {
             double x1 = start + log10(i + 1) * log_step;
@@ -167,14 +172,14 @@ int main(ARGS) {
         canvas_dump(canvas, outfd);
         // *** 
 #else
-        i32 energy = map(fft_energy(fft_out, CHUNK/2 - OFFSET), 0, 100, 0, height/200);
+        canvas_cpy(canvas, canvas_back);
+        double energy = fft_energy(fft_out, CHUNK/2 - OFFSET) / height;
 
-        energy = prev_energy + (energy - prev_energy) * 0.4;
+        energy = prev_energy + (energy - prev_energy) * 0.6;
         prev_energy = energy;
 
-        double scale = 1.0 - (1.0 / (5 + energy ));
-        scale = prev_scale + (scale - prev_scale) * 0.6;
-
+        double scale = BASE_SCALE + (1. - BASE_SCALE) * energy * energy * 3;
+        
         if (canvas_center) {
             canvas_center->width = canvas_center_backup->width;
             canvas_center->height = canvas_center_backup->height;
