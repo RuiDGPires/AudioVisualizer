@@ -3,7 +3,7 @@
 
 #ifdef DEBUG
 #define FREQ_GRAPH
-#define DURATION 5
+#define DURATION 40
 #else
 #define AUDIO
 #endif

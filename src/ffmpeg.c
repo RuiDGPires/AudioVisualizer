@@ -3,7 +3,6 @@
 #include "ffmpeg.h"
 #include "err.h"
 
-#define AUDIO
 #define PIPE_READ  0
 #define PIPE_WRITE 1
 

@@ -112,10 +112,23 @@ int main(ARGS) {
         canvas_fill(canvas_back, COLOR_BLACK);
     }
 
+    canvas = canvas_dup(canvas_back);
+    usize width = canvas->width, height = canvas->height;
+
     canvas_t *canvas_center = NULL, *canvas_center_backup = NULL;
 
     if (center_pic_file) {
         canvas_center = canvas_from_img(center_pic_file);
+        u32 min_pic = canvas_center->width < canvas_center->height ? canvas_center->width : canvas_center->height;
+        u32 min_canvas = width < height ? width : height;
+
+        double max_radius = min_canvas * 0.5 * 0.35;
+
+        // Limit center pic to a size
+        if (min_pic * 0.5 > max_radius) {
+            canvas_scale(canvas_center, (max_radius * 2) / min_pic );
+        }
+
         canvas_cut_circle(canvas_center);
         canvas_center_backup = canvas_dup(canvas_center);
 
@@ -123,8 +136,6 @@ int main(ARGS) {
         clean_register(&canvas_center_backup, clean_canvas);
     }
     
-    canvas = canvas_dup(canvas_back);
-    usize width = canvas->width, height = canvas->height;
 
 
     int outfd = open_ffmpeg(output_file, input_file, width, height, FPS);
