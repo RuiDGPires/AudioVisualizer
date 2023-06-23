@@ -1,3 +1,6 @@
+//#define DEBUG
+
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -13,23 +16,20 @@
 #include "util.h"
 #include "pcolors.h"
 
-//#define FREQ_GRAPH
-//#define DURATION 6 
-
 #define WIDTH  1200
 #define HEIGHT 800
-#define FPS 20
+#define FPS 30
 
 #define MAX_FILENAME 100
 
 #define USAGE "vis <output_name>"
 #define DEFAULT_NAME "out.mp4"
 #define CHUNK (512 * 2)
-#define OFFSET 3
+#define OFFSET 1
 #define SMOOTHING 0.4
-#define NORMALIZE_PARAMETER 0.06
-#define ENERGY_SCALE 10
-#define BASE_SCALE 0.7
+#define NORMALIZE_PARAMETER 0.04
+#define BASE_SCALE 0.6
+#define DEFAULT_MAPPING_ENERGY 200.0
 
 #ifndef DURATION
 #define DURATION duration
@@ -61,8 +61,10 @@ wav_t *open_wav(const char *filename) {
 }
 
 i32 *process_wav(wav_t *wav) {
-    wav_to_mono_left(wav);
+    wav_to_mono(wav);
     i32 *buffer = wav_to_32(wav);
+
+    wav_normalize(wav, 150);
     return buffer;
 }
 
@@ -82,6 +84,8 @@ void end_msg(int status, const char *input_file, const char *output_file) {
 }
 
 int main(ARGS) {
+    double max_energy = DEFAULT_MAPPING_ENERGY;
+
     char *output_file = DEFAULT_NAME, input_file[MAX_FILENAME] = "\0";
     char *center_pic_file = NULL, *background_pic_file = NULL;
 
@@ -112,6 +116,7 @@ int main(ARGS) {
 
     if (center_pic_file) {
         canvas_center = canvas_from_img(center_pic_file);
+        canvas_cut_circle(canvas_center);
         canvas_center_backup = canvas_dup(canvas_center);
 
         clean_register(&canvas_center, clean_canvas);
@@ -119,10 +124,9 @@ int main(ARGS) {
     }
     
     canvas = canvas_dup(canvas_back);
-
     usize width = canvas->width, height = canvas->height;
 
-    wav_normalize(wav, height/3);
+
     int outfd = open_ffmpeg(output_file, input_file, width, height, FPS);
     clean_register(&outfd, clean_fd);
 
@@ -138,7 +142,7 @@ int main(ARGS) {
 
     fft(buffer, fft_tmp2); // Fill second tmp buffer with initial fft
     normalize_fft(fft_tmp2, fft_tmp2, CHUNK/2 - OFFSET, height/ 5);
-    fft_lowpass(fft_tmp2, CHUNK/2, 0.04, 0);
+    fft_lowpass(fft_tmp2, CHUNK/2, 0.04, 1);
     i32 *fft_tmp[2] = {fft_tmp1, fft_tmp2};
     // *** 
 
@@ -146,7 +150,7 @@ int main(ARGS) {
 
     for (usize i = 0; i < FPS * DURATION; i++) {
 
-        fft(&buffer[map(i, 0, FPS * duration, CHUNK, N - CHUNK)], fft_tmp[i % 2]);
+        fft(&buffer[map(i, 0, FPS * duration, CHUNK*2, N - CHUNK)], fft_tmp[i % 2]);
 
         // Alternating pointers
         i32 *fft_out = &(fft_tmp[i % 2])[OFFSET]; // Output FFT
@@ -173,12 +177,19 @@ int main(ARGS) {
         // *** 
 #else
         canvas_cpy(canvas, canvas_back);
-        double energy = fft_energy(fft_out, CHUNK/2 - OFFSET) / height;
+        
+        double energy = fft_energy(fft_out, CHUNK/3);
+
+        // If, for some reason, it exceeds the initial prediction of max energy, adjust accordingly
+        if (energy > max_energy)
+            max_energy = energy;
 
         energy = prev_energy + (energy - prev_energy) * 0.6;
+        
+
         prev_energy = energy;
 
-        double scale = BASE_SCALE + (1. - BASE_SCALE) * energy * energy * 3;
+        double scale = BASE_SCALE + mapf(energy, 0, max_energy, 0, 1.0 - BASE_SCALE);
         
         if (canvas_center) {
             canvas_center->width = canvas_center_backup->width;
@@ -187,10 +198,9 @@ int main(ARGS) {
             canvas_scale(canvas_center, scale);
             canvas_paste(canvas, canvas_center, MAKEPOINT(width/2 - canvas_center->width/2, height/2 - canvas_center->height/2));
         } else
-            canvas_draw_circle_outline(canvas, MAKEPOINT(width/2, height/2), height/3 + energy, 4, COLOR_WHITE);
+            canvas_draw_circle_outline(canvas, MAKEPOINT(width/2, height/2), (double)height/3 + energy, 4, COLOR_WHITE);
         canvas_dump(canvas, outfd);
 #endif
-
     }
 
     close(outfd);

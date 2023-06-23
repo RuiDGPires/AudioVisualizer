@@ -144,7 +144,7 @@ void wav_normalize(wav_t *wav, usize new_max) {
     for (usize i = 0; i < n_samples; i++) {
         i32 val = wav_get_val32(wav, i);
         if (abs(val) > max) 
-            max = val;
+            max = abs(val);
     }
 
     for (usize i = 0; i < n_samples; i++) {

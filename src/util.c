@@ -17,3 +17,8 @@ i32 map(i32 val, i32 f_min, i32 f_max, i32 t_min, i32 t_max) {
     // May devide by zero!
     return t_min + (val - f_min) * ((double)(t_max - t_min) / (f_max - f_min));
 }
+
+double mapf(double val, double f_min, double f_max, double t_min, double t_max) {
+    // May devide by zero!
+    return t_min + (val - f_min) * ((t_max - t_min) / (f_max - f_min));
+}

@@ -26,9 +26,16 @@ canvas_t *canvas_dup(canvas_t *canvas) {
     return new_canvas;
 }
 
-// Copies the contents of a canvas to another (equivalent to canvas_paste(dest, src, (0, 0)))
-inline void canvas_cpy(canvas_t *dst, canvas_t *src) {
-    canvas_paste(dst, src, MAKEPOINT(0,0));
+// Copies the contents of a canvas to another (roughly equivalent to canvas_paste(dest, src, (0, 0)))
+// Key difference: 
+//  *sets* the colors, doesnt draw them
+inline void canvas_cpy(canvas_t *dest, canvas_t *src) {
+    for (u32 w = 0; w < src->width; w++) {
+        for (u32 h = 0; h < src->height; h++) {
+            point_t p2 = MAKEPOINT(w, h);
+            canvas_set_point(dest, p2, canvas_get_point(src, p2));
+        }
+    }
 }
 
 canvas_t *canvas_create(u32 width, u32 height) {
@@ -72,11 +79,30 @@ color_t canvas_get_point(canvas_t *canvas, point_t point) {
     return canvas->buffer[point.x + point.y*canvas->width];
 }
 
-void canvas_draw_point(canvas_t *canvas, point_t p, color_t color) {
+color_t blend_pixel(color_t back, color_t fore) {
+    // Perform alpha blending calculation
+    float alpha = GET_ALPHA(fore) / 255.0;
+    float invAlpha = 1.0 - alpha;
+
+    u8 red = (uint8_t)(GET_RED(fore) * alpha + GET_RED(back) * invAlpha);
+    u8 green = (uint8_t)(GET_GREEN(fore) * alpha + GET_GREEN(back) * invAlpha);
+    u8 blue = (uint8_t)(GET_BLUE(fore) * alpha + GET_BLUE(back) * invAlpha);
+    u8 res_alpha = (uint8_t)(GET_ALPHA(fore) * alpha + GET_ALPHA(back) * invAlpha);
+
+    return RGBA(red, green, blue, res_alpha);
+}
+
+void canvas_set_point(canvas_t *canvas, point_t p, color_t color) {
     ERR_ASSERT(p.x >= 0 && p.x < canvas->width && p.y >= 0 && p.y < canvas->height, "Invalid coordinates: (%lu, %lu) on canvas (%u, %u)", p.x, p.y, canvas->width, canvas->height);
 
     canvas->buffer[p.x + p.y*canvas->width] = color;
 }
+
+// Blends the pixels
+void canvas_draw_point(canvas_t *canvas, point_t p, color_t color) {
+     canvas_set_point(canvas, p, blend_pixel(canvas_get_point(canvas, p), color));
+}
+
 
 void canvas_draw_line(canvas_t *canvas, point_t p1, point_t p2, u32 thickness, color_t color) {
     int dx = p2.x - p1.x;
@@ -103,6 +129,22 @@ void canvas_draw_circle(canvas_t *canvas, point_t center, u32 radius, color_t co
         }
     }
 }
+
+void canvas_cut_circle(canvas_t *canvas) {
+    u32 radius = (canvas->width < canvas->height ? canvas->width : canvas->height) * 0.5;
+
+    point_t center = MAKEPOINT(canvas->width/2, canvas->height/2);
+
+    for (u32 y = 0; y < canvas->height; y++){
+        for (u32 x = 0; x < canvas->width; x++){
+            point_t p = (point_t) {.x = x, .y = y};
+            u32 dist = point_dist_sqrd(p, center);
+            if (dist >= radius*radius) 
+                canvas->buffer[x + y*canvas->width] = RGBA(0, 0, 0, 0);
+        }
+    }
+}
+
 
 void canvas_draw_circle_outline(canvas_t *canvas, point_t center, u32 radius, u32 border_size, color_t color) {
     u32 dist_min = radius - border_size;
