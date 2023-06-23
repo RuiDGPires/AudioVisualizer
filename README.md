@@ -8,4 +8,4 @@ Utility to generate videos based on audio files
 ![img](imgs/Screenshot1.png)
 
 ### Bouncing image
-![img](example.gif)
+![img](imgs/example.gif)
