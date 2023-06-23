@@ -1,6 +1,8 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
+//#define DEBUG
+
 #ifdef DEBUG
 #define FREQ_GRAPH
 #define DURATION 40

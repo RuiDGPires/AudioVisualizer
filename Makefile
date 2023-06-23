@@ -6,6 +6,10 @@ CC := gcc
 $(TARGET): $(C_FILES) $(H_FILES)
 	gcc -Wall $(C_FILES) -o $@ -lm -lpng -ljpeg
 
+.PHONY: release
+release: $(C_FILES) $(H_FILES)
+	gcc -O3 $(C_FILES) -o $@ -lm -lpng -ljpeg
+
 .PHONY: clean
 clean:
 	rm $(TARGET)
