@@ -1,13 +1,7 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-//#define DEBUG
-
-#ifdef DEBUG
-#define FREQ_GRAPH
-#define DURATION 40
-#else
 #define AUDIO
-#endif
+#define DURATION 30
 
 #endif

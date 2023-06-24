@@ -61,3 +61,9 @@ double fft_energy(i32 *buffer, usize len) {
 
   return (100 * (double)sum / len);
 }
+
+void fft_soften(i32 *buffer, usize len, double ammount) {
+  for (usize i = 0; i < len - 1; i++) {
+    buffer[i] = (buffer[i] + buffer[i] * (1 - ammount) + buffer[i+1] * ammount) * 0.5;
+  }
+}
