@@ -2,6 +2,6 @@
 #define __CONFIG_H__
 
 #define AUDIO
-#define DURATION 30
+//#define DURATION 10
 
 #endif

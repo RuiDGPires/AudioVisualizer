@@ -131,6 +131,7 @@ void canvas_draw_circle(canvas_t *canvas, point_t center, u32 radius, color_t co
 }
 
 void canvas_cut_circle(canvas_t *canvas) {
+    const double thickness = 10;
     u32 radius = (canvas->width < canvas->height ? canvas->width : canvas->height) * 0.5;
 
     point_t center = MAKEPOINT(canvas->width/2, canvas->height/2);
@@ -139,7 +140,9 @@ void canvas_cut_circle(canvas_t *canvas) {
         for (u32 x = 0; x < canvas->width; x++){
             point_t p = (point_t) {.x = x, .y = y};
             u32 dist = point_dist_sqrd(p, center);
-            if (dist >= radius*radius) 
+            if (dist >= (radius*radius))
+                canvas->buffer[x + y*canvas->width] = RGBA(0xFF, 0xFF, 0xFF, 0xFF);
+            if (dist >= (radius*radius + thickness*thickness) )
                 canvas->buffer[x + y*canvas->width] = RGBA(0, 0, 0, 0);
         }
     }

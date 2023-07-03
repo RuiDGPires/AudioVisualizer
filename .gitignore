@@ -6,3 +6,6 @@ vis
 *.jpeg
 audios/
 vgcore*
+release
+src/ttf*
+smartinho

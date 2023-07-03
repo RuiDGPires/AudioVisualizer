@@ -99,7 +99,7 @@ void clear_circle_energy(double *ce, i32 *fft) {
 }
 
 void draw_spectrum_circle(canvas_t *canvas, i32 *fft, color_t color1, color_t color2, double scale, double *tmp) {
-    const double e_min = canvas->height/9.3, e_max = scale * canvas->height/3;
+    const double e_min = canvas->height/11.2, e_max = scale * canvas->height/6;
     const usize spec   = CHUNK * 0.20;
     const usize offset = CHUNK/40;
     const double softness = 0.2;
@@ -277,7 +277,7 @@ int main(ARGS) {
         normalize_fft(fft_out, fft_prev, CHUNK - OFFSET, height / 2.2);
 
         canvas_cpy(canvas, canvas_back);
-        draw_spectrum_circle(canvas, fft_out, COLOR_WHITE, RGBA(0x0A, 0xD0, 0x0A, 0xEE), 1, prev_circle_energy1);
+        draw_spectrum_circle(canvas, fft_out, RGBA(0xFF, 0xFF,0xFF, 0x50), RGBA(0xA0, 0xA0, 0xA0, 0x40), 1, prev_circle_energy1);
 
         fft_lowpass(fft_out, CHUNK/2 - OFFSET, 0.0005, 2);
 
